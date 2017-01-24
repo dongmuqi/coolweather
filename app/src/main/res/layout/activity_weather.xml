@@ -12,26 +12,42 @@
       android:scaleType="centerCrop"
       android:layout_width="match_parent" android:layout_height="match_parent"/>
 
-  <ScrollView android:id="@+id/weather_layout"
-      android:layout_width="match_parent" android:layout_height="match_parent"
-      android:scrollbars="none" android:overScrollMode="never">
+  <android.support.v4.widget.DrawerLayout android:id="@+id/drawer_layout"
+      android:layout_width="match_parent"
+      android:layout_height="match_parent">
 
-    <LinearLayout
-        android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical" android:fitsSystemWindows="true">
 
-      <include layout="@layout/title"/>
+    <android.support.v4.widget.SwipeRefreshLayout android:id="@+id/swipe_refresh"
+        android:layout_width="match_parent" android:layout_height="match_parent">
 
-      <include layout="@layout/now"/>
+      <ScrollView android:id="@+id/weather_layout"
+          android:layout_width="match_parent" android:layout_height="match_parent"
+          android:scrollbars="none" android:overScrollMode="never">
 
-      <include layout="@layout/forecast"/>
+        <LinearLayout
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="vertical" android:fitsSystemWindows="true">
 
-      <include layout="@layout/aqi"/>
+          <include layout="@layout/title"/>
 
-      <include layout="@layout/suggestion"/>
+          <include layout="@layout/now"/>
 
-    </LinearLayout>
+          <include layout="@layout/forecast"/>
 
-  </ScrollView>
+          <include layout="@layout/aqi"/>
 
+          <include layout="@layout/suggestion"/>
+
+        </LinearLayout>
+
+      </ScrollView>
+    </android.support.v4.widget.SwipeRefreshLayout>
+
+    <fragment android:id="@+id/choose_area_fragment"
+        android:layout_width="100dp"
+        android:layout_height="match_parent"
+        android:name="aappbartest.com.seven.coolweather.AreaFragment"
+    android:layout_gravity="left"/>
+
+  </android.support.v4.widget.DrawerLayout>
 </FrameLayout>

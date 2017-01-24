@@ -2,17 +2,23 @@ package aappbartest.com.seven.coolweather;
 
 import aappbartest.com.seven.coolweather.gson.Forecast;
 import aappbartest.com.seven.coolweather.gson.Weather;
+import aappbartest.com.seven.coolweather.service.AutoUpdateService;
 import aappbartest.com.seven.coolweather.util.HttpUtil;
 import aappbartest.com.seven.coolweather.util.Utility;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
 import android.preference.PreferenceManager;
+import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -40,30 +46,42 @@ public class WeatherActivity extends AppCompatActivity {
   @BindView(R.id.txt_car_wash_text) TextView mCarWashText;
   @BindView(R.id.txt_sport_test) TextView mSportText;
   @BindView(R.id.bing_pic_img) ImageView bingPicImg;
+  @BindView(R.id.swipe_refresh) SwipeRefreshLayout swipeRefresh;
+  @BindView(R.id.nav_button) Button navButton;
+  @BindView(R.id.drawer_layout) DrawerLayout drawerLayout;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
     //沉浸式
-    if (Build.VERSION.SDK_INT>=21){
-      View decorView=getWindow().getDecorView();
-      decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN|View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+    if (Build.VERSION.SDK_INT >= 21) {
+      View decorView = getWindow().getDecorView();
+      decorView.setSystemUiVisibility(
+          View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
       getWindow().setStatusBarColor(Color.TRANSPARENT);
     }
 
     setContentView(R.layout.activity_weather);
     ButterKnife.bind(this);
 
+    navButton.setOnClickListener(new View.OnClickListener() {
+      @Override public void onClick(View v) {
+        drawerLayout.openDrawer(GravityCompat.START);
+      }
+    });
+
     SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
     String weatherString = prefs.getString("weather", null);
+    final String weatherId;
     if (weatherString != null) {
       //有缓存时直接解析天气
       Weather weather = Utility.handleWeatherResponse(weatherString);
+      weatherId = weather.basic.weatherId;
       showWeatherInfo(weather);
     } else {
       //无缓存时去服务器查询天气
-      String weatherId = getIntent().getStringExtra("weather_id");
+      weatherId = getIntent().getStringExtra("weather_id");
       mWeatherLayout.setVisibility(View.INVISIBLE);
       requestWeather(weatherId);
     }
@@ -73,10 +91,17 @@ public class WeatherActivity extends AppCompatActivity {
     } else {
       loadBingPic();
     }
+
+    swipeRefresh.setColorSchemeResources(R.color.colorPrimary);
+    swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+      @Override public void onRefresh() {
+        requestWeather(weatherId);
+      }
+    });
   }
 
   //根据天气id请求城市天气信息
-  private void requestWeather(final String weatherId) {
+  public void requestWeather(final String weatherId) {
     String weatherUrl = "http://guolin.tech/api/weather?cityid="
         + weatherId
         + "&key=bd565fc885ca4c22be71c619d6acc6c9";
@@ -98,6 +123,7 @@ public class WeatherActivity extends AppCompatActivity {
             } else {
               Toast.makeText(WeatherActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
             }
+            swipeRefresh.setRefreshing(false);
           }
         });
         loadBingPic();
@@ -108,6 +134,7 @@ public class WeatherActivity extends AppCompatActivity {
         runOnUiThread(new Runnable() {
           @Override public void run() {
             Toast.makeText(WeatherActivity.this, "获取天气信息失败:202", Toast.LENGTH_SHORT).show();
+            swipeRefresh.setRefreshing(false);
           }
         });
       }
@@ -151,6 +178,8 @@ public class WeatherActivity extends AppCompatActivity {
     mSportText.setText(sport);
     mComfortText.setText(comfor);
     mWeatherLayout.setVisibility(View.VISIBLE);
+    Intent intent=new Intent(this,AutoUpdateService.class);
+    startService(intent);
   }
 
   private void loadBingPic() {
